@@ -13,27 +13,27 @@ IS32BIT = not idaapi.get_inf_structure().is_64bit()
 
 IS_MAC = 'X86_64' in idaapi.get_file_type_name()
 
-print "Start analyze binary for " + ("Mac" if IS_MAC else "iOS")
+print("Start analyze binary for " + ("Mac" if IS_MAC else "iOS"))
 
 
 def isInText(x):
-    return SegName(x) == '__text'
+    return idc.get_segm_name(x) == '__text'
 
 
-GlobalBlockAddr = LocByName("__NSConcreteGlobalBlock")
+GlobalBlockAddr = idc.get_name_ea_simple("__NSConcreteGlobalBlock")
+print('GlobalBlockAddr = %x' % GlobalBlockAddr)
 
 class GlobalBlockInfo:
     pass
 
 AllGlobalBlockMap = {}
 for struct in list(DataRefsTo(GlobalBlockAddr)):
-    func = 0L
+    func = 0
     FUNC_OFFSET_IN_BLOCK = 12 if IS32BIT else 16
     if IS32BIT:
         func = Dword(struct + FUNC_OFFSET_IN_BLOCK)
     else:
         func = Qword(struct + FUNC_OFFSET_IN_BLOCK)
-
 
     info = GlobalBlockInfo()
     info.func = func
@@ -41,8 +41,8 @@ for struct in list(DataRefsTo(GlobalBlockAddr)):
     if len(list(DataRefsTo(struct))) == 0:
         continue
     refTo = list(DataRefsTo(struct))[0]
-    info.superFuncName = GetFunctionName(refTo)
-    info.superFunc = LocByName(info.superFuncName)
+    info.superFuncName = idc.get_func_name(refTo)
+    info.superFunc = idc.get_name_ea_simple(info.superFuncName)
 
     AllGlobalBlockMap[func] = info
 
@@ -56,7 +56,7 @@ def isPossibleStackBlockForFunc(block_func):
     if not isInText(block_func):
         return False
 
-    if GetFunctionAttr(block_func,FUNCATTR_START) != (block_func & ~ 1):
+    if idc.get_func_attr(block_func,FUNCATTR_START) != (block_func & ~ 1):
         return False
 
     #block addr cannot be called directly
@@ -72,7 +72,7 @@ def isPossibleStackBlockForFunc(block_func):
             return False
 
     # block func should be ref in only 1 function
-    superFuncs = [GetFunctionAttr(x,FUNCATTR_START) for x in refsTo]
+    superFuncs = [idc.get_func_attr(x,FUNCATTR_START) for x in refsTo]
     superFuncs = list (set (superFuncs))
     if len(superFuncs) != 1:
         # print '%x is not block because be not ref from  1 function' % block_func
@@ -82,7 +82,7 @@ def isPossibleStackBlockForFunc(block_func):
 
 def superFuncForStackBlock(block_func):
     refsTo = list(DataRefsTo(block_func))
-    superFuncs = [GetFunctionAttr(x,FUNCATTR_START) for x in refsTo]
+    superFuncs = [idc.get_func_attr(x,FUNCATTR_START) for x in refsTo]
     superFuncs = list (set (superFuncs))
     if len(superFuncs) != 1:
         return None
@@ -90,7 +90,7 @@ def superFuncForStackBlock(block_func):
     if IS_MAC:
         return super_func_addr
     else:
-        return super_func_addr | GetReg(super_func_addr, "T") # thumb
+        return super_func_addr | idc.get_sreg(super_func_addr, "T") # thumb
 
 
 def superFuncForBlockFunc(block_func):
@@ -106,8 +106,8 @@ resultDict = {}
 
 
 def findBlockName(block_func):
-    # print "find block name  %X" % block_func
-    funcName = GetFunctionName(block_func)
+    # print("find block name  %X" % block_func)
+    funcName = idc.get_func_name(block_func)
 
     if len(funcName) != 0 and funcName[0] in ('-', '+'):
         return funcName
@@ -117,7 +117,7 @@ def findBlockName(block_func):
     if superBlockFuncAddr == None:
         return "";
     if not IS_MAC:
-        superBlockFuncAddr = superBlockFuncAddr | GetReg(superBlockFuncAddr, "T") # thumb
+        superBlockFuncAddr = superBlockFuncAddr | idc.get_sreg(superBlockFuncAddr, "T") # thumb
         
     superBlockName = findBlockName(superBlockFuncAddr)
 
@@ -132,9 +132,9 @@ def findBlockName(block_func):
 allPossibleStackBlockFunc = []
 allRefToBlock=[]
 if IS32BIT:
-    allRefToBlock = list(DataRefsTo(LocByName("__NSConcreteStackBlock")))
+    allRefToBlock = list(DataRefsTo(idc.get_name_ea_simple("__NSConcreteStackBlock")))
 else:
-    allRefToBlock = list(DataRefsTo(LocByName("__NSConcreteStackBlock_ptr")))
+    allRefToBlock = list(DataRefsTo(idc.get_name_ea_simple("__NSConcreteStackBlock_ptr")))
     allRefToBlock.sort()
 
     '''
@@ -152,18 +152,18 @@ else:
             tmp_array.append(allRefToBlock[i])
     allRefToBlock = tmp_array
 
-allRefToBlock = filter(lambda x:isInText(x), allRefToBlock)
+allRefToBlock = list(filter(lambda x:isInText(x), allRefToBlock))
 
 for addr in allRefToBlock:
     LineNumAround = 30 #Around 30 arm instruction
-    scan_addr_min= max (addr - LineNumAround * 4, GetFunctionAttr(addr,FUNCATTR_START))
-    scan_addr_max= min (addr + LineNumAround * 4, GetFunctionAttr(addr,FUNCATTR_END))
+    scan_addr_min= max (addr - LineNumAround * 4, idc.get_func_attr(addr,FUNCATTR_START))
+    scan_addr_max= min (addr + LineNumAround * 4, idc.get_func_attr(addr,FUNCATTR_END))
     for scan_addr in range(scan_addr_min, scan_addr_max):
         allPossibleStackBlockFunc += list(DataRefsFrom(scan_addr)) # all function pointer used around __NSConcreteStackBlock
 
 allPossibleStackBlockFunc = list (set (allPossibleStackBlockFunc))
 
-allPossibleStackBlockFunc = filter(lambda x:isPossibleStackBlockForFunc(x) , allPossibleStackBlockFunc )
+allPossibleStackBlockFunc = list(filter(lambda x:isPossibleStackBlockForFunc(x) , allPossibleStackBlockFunc ))
 
 
 
@@ -195,5 +195,5 @@ f = open(output_file, "w")
 f.write(encodeJson)
 f.close()
 
-print 'restore block num %d ' % len(list_output)
-print 'origin  block num: %d(GlobalBlock: %d, StackBlock: %d)' % (len(allRefToBlock) + len(AllGlobalBlockMap), len(AllGlobalBlockMap), len(allRefToBlock))
+print('restore block num %d ' % len(list_output))
+print('origin  block num: %d(GlobalBlock: %d, StackBlock: %d)' % (len(allRefToBlock) + len(AllGlobalBlockMap), len(AllGlobalBlockMap), len(allRefToBlock)))
