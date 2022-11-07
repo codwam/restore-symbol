@@ -31,9 +31,9 @@ for struct in list(DataRefsTo(GlobalBlockAddr)):
     func = 0
     FUNC_OFFSET_IN_BLOCK = 12 if IS32BIT else 16
     if IS32BIT:
-        func = Dword(struct + FUNC_OFFSET_IN_BLOCK)
+        func = get_wide_dword(struct + FUNC_OFFSET_IN_BLOCK)
     else:
-        func = Qword(struct + FUNC_OFFSET_IN_BLOCK)
+        func = get_qword(struct + FUNC_OFFSET_IN_BLOCK)
 
     info = GlobalBlockInfo()
     info.func = func
