@@ -52,11 +52,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-o /Users/anonymous/opt/Github/restore-symbol/ThirdSwiftDemo2"
+            argument = "-o /Users/anonymous/opt/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS-with-symbol"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/anonymous/opt/Github/restore-symbol/ThirdSwiftDemo"
+            argument = "/Users/anonymous/opt/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
