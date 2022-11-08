@@ -1,5 +1,6 @@
 [submodule "class-dump"]
 	path = class-dump
 	# url = https://github.com/nygard/class-dump
-	# url = /Users/anonymous/opt/Github/class-dump
-	url = https://github.com/codwam/class-dump
+	# url = https://github.com/codwam/class-dump
+	# url = https://github.com/lechium/classdumpios
+	url = https://github.com/codwam/classdumpios

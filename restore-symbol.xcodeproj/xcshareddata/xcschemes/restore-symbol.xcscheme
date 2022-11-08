@@ -52,11 +52,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-o /Users/anonymous/opt/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS-with-symbol"
+            argument = "-o /Users/lihui02/development/training/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS-test"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/anonymous/opt/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS"
+            argument = "/Users/lihui02/development/training/fighting/surge-tweak-fighting/IgnoreMe/Payload/Surge-iOS"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
