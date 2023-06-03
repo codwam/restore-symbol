@@ -62,6 +62,11 @@
         if (symbol.address == 0) {
             continue;
         }
+        BOOL result = NO;
+        uint8 n_sect = [self n_sectForSymbol:symbol result:&result];
+        if (!result) {
+            continue;
+        }
         
         
         if (is32Bit) {
@@ -69,7 +74,7 @@
             bool isThumb = symbol.address & 1;
             list[i].n_desc = isThumb ? N_ARM_THUMB_DEF : 0;
             list[i].n_type = N_PEXT | N_SECT;
-            list[i].n_sect = [self n_sectForAddress:symbol.address];
+            list[i].n_sect = n_sect;
             list[i].n_value = (uint32_t)symbol.address & ~ 1;
             list[i].n_un.n_strx = origin_string_table_size + (uint32)symbolNames.length;
             
@@ -77,7 +82,7 @@
             struct nlist_64 * list = nlistsData.mutableBytes;
             list[i].n_desc =  0;
             list[i].n_type = N_PEXT | N_SECT;
-            list[i].n_sect = [self n_sectForAddress:symbol.address];
+            list[i].n_sect = n_sect;
             list[i].n_value = symbol.address;
             list[i].n_un.n_strx = origin_string_table_size + (uint32)symbolNames.length;
         }
@@ -93,10 +98,10 @@
     
 }
 
-- (uint8)n_sectForAddress:(uint64)address{
-    
-
+- (uint8)n_sectForSymbol:(RSSymbol *)symbol result:(BOOL *)result {
+    uint64 address = symbol.address;
     uint8 n_sect = 0;
+    if (result) *result = true;
     
     for (id loadCommand in _machOFile.loadCommands) {
         if ([loadCommand isKindOfClass:[CDLCSegment class]]){
@@ -116,9 +121,9 @@
         }
     }
     
-    NSLog(@"Address(%llx) not found in the image", address);
-    exit(1);
-    return 1;
+    if (result) *result = false;
+    NSLog(@"Address(0x%llx %@) not found in the image", address, symbol.name);
+    return n_sect;
 }
 
 
